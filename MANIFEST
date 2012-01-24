@@ -5,7 +5,5 @@ Makefile.PL
 README
 dist.ini
 lib/Text/Table/Tiny.pm
-lib/Text/Table/Tiny.pm~
 t/basic_table_tests.t
-t/basic_table_tests.t~
 weaver.ini

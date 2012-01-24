@@ -106,7 +106,7 @@ Text::Table::Tiny - makes simple tables from two-dimensional arrays, with limite
 
 =head1 VERSION
 
-version 0.02
+version 0.03
 
 =head1 OPTIONS
 

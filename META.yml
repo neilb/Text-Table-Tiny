@@ -17,4 +17,4 @@ requires:
   List::Util: 0
   strict: 0
   warnings: 0
-version: 0.02
+version: 0.03

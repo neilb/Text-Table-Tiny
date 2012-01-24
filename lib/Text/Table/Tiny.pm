@@ -1,6 +1,10 @@
 use strict;
 use warnings;
 package Text::Table::Tiny;
+use List::Util qw();
+
+# ABSTRACT: makes simple tables from two-dimensional arrays, with limited templating options
+
 
 our $COLUMN_SEPARATOR = '|';
 our $ROW_SEPARATOR = '-';
@@ -11,16 +15,14 @@ our $HEADER_CORNER_MARKER = 'O';
 sub table {
 
     my %params = @_;
-
     my $rows = $params{rows} or die "Must provide rows!";
 
-    # foreach col, get the maxlength
-    my $widths = _maxlengths($rows);
+    # foreach col, get the biggest width
+    my $widths = _maxwidths($rows);
+    my $max_index = _max_array_index($rows);
 
-    # use that to get the field format
+    # use that to get the field format and separators
     my $format = _get_format($widths);
-
-    # get the length of the resulting string
     my $row_sep = _get_row_separator($widths);
     my $head_row_sep = _get_header_row_separator($widths);
 
@@ -28,16 +30,27 @@ sub table {
     my @table;
     push @table, $row_sep;
 
+    # if the first row's a header:
+    my $data_begins = 0;
     if ( $params{header_row} ) {
-        my $header_row = shift @$rows;
-        push @table, sprintf($format,@$header_row);
+        my $header_row = $rows->[0];
+	$data_begins++;
+        push @table, sprintf(
+	    $format, 
+	    map { defined($header_row->[$_]) ? $header_row->[$_] : '' } (0..$max_index)
+	);
         push @table, $params{separate_rows} ? $head_row_sep : $row_sep;
     }
 
-    foreach my $row (@$rows) {
-        push @table, sprintf($format,map { $_ || '' } @$row);
+    # then the data
+    foreach my $row ( @{ $rows }[$data_begins..$#$rows] ) {
+        push @table, sprintf(
+	    $format, 
+	    map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
+	);
         push @table, $row_sep if $params{separate_rows};
     }
+
     # this will have already done the bottom if called explicitly
     push @table, $row_sep unless $params{separate_rows};
     return join("\n",grep {$_} @table);
@@ -45,28 +58,26 @@ sub table {
 
 sub _get_cols_and_rows ($) {
     my $rows = shift;
-    return (_maxnum( map { scalar @$_ } @$rows), scalar @$rows);
+    return ( List::Util::max( map { scalar @$_ } @$rows), scalar @$rows);
 }
 
-sub _maxnum {
-    my @list = @_;
-    my $max = 0;
-    do{$max = $_ if $_ > $max} foreach (@list);
-    return $max;
-}
-
-sub _maxlengths {
+sub _maxwidths {
     my $rows = shift;
     # what's the longest array in this list of arrays?
-    my $max_index = _maxnum(map { $#$_ } @$rows);
+    my $max_index = _max_array_index($rows);
     my $widths = [];
     for my $i (0..$max_index) {
-        my $max = 0;
         # go through the $i-th element of each array, find the longest
-        do{$max = $_ if $_ > $max} foreach (map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
+        my $max = List::Util::max(map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
         push @$widths, $max;
     }
     return $widths;
+}
+
+# return highest top-index from all rows in case they're different lengths
+sub _max_array_index {
+    my $rows = shift;
+    return List::Util::max( map { $#$_ } @$rows );
 }
 
 sub _get_format {
@@ -87,47 +98,49 @@ sub _get_header_row_separator {
 1;
 
 __END__
-
-#ABSTRACT: makes simple text tables
+=pod
 
 =head1 NAME
 
-  Text::Table::Tiny
+Text::Table::Tiny - makes simple tables from two-dimensional arrays, with limited templating options
+
+=head1 VERSION
+
+version 0.02
+
+=head1 OPTIONS
+
+=over 4
+
+=item *
+
+header_row
+
+true/false, designate first row in $rows as a header row and separate with a line
+
+=item *
+
+separate_rows
+
+true/false put a separator line between rows and use a thicker line for header separator
+
+=back
 
 =head1 SYNOPSIS
 
     use Text::Table::Tiny;
-    my $rows   = [
-                  ['Name', 'Rank', 'Serial'];
-                  ['alice', 'pvt', '123456'],
-                  ['bob',   'cpl', '98765321'],
-                  ['carol', 'brig gen', '8745']
-                 ];
+    my $rows = [
+        # header row
+        ['Name', 'Rank', 'Serial'],
+        # rows
+        ['alice', 'pvt', '123456'],
+        ['bob',   'cpl', '98765321'],
+        ['carol', 'brig gen', '8745'],
+    ];
     # separate rows puts lines between rows, header_row says that the first row is headers
     print Text::Table::Tiny::table(rows => $rows, separate_rows => 1, header_row => 1);
 
-=head1 DESCRIPTION
-
-    Text::Table::Tiny provides a simple static method for building text tables for terminal scripts that require tablular rows.
-
-=head1 METHODS
-
-=item table
-
-    my $table = Text::Table::Tiny::table( rows => $arrayref_of_arrayrefs );
-
-  creates a text table from an arrayref of arrayrefs.
-
-  options:
-  - header_row:    tells table() that the first row in $rows is a header row
-  - separate_rows: puts a separator line between rows, makes the header separator
-                   line um... special.
-
-  So, the above example, called as:
-
-    Text::Table::Tiny::table(rows => $rows);
-
-  would return:
+  Example in the synopsis: Text::Table::Tiny::table(rows => $rows);
 
     +-------+----------+----------+
     | Name  | Rank     | Serial   |
@@ -136,7 +149,7 @@ __END__
     | carol | brig gen | 8745     |
     +-------+----------+----------+
 
-  called with header_row:
+  with header_row: Text::Table::Tiny::table(rows => $rows, header_row => 1);
 
     +-------+----------+----------+
     | Name  | Rank     | Serial   |
@@ -146,7 +159,7 @@ __END__
     | carol | brig gen | 8745     |
     +-------+----------+----------+
 
-  called with header_row and separate_rows would return:
+  with header_row and separate_rows: Text::Table::Tiny::table(rows => $rows, header_row => 1, separate_rows => 1);
 
     +-------+----------+----------+
     | Name  | Rank     | Serial   |
@@ -158,15 +171,42 @@ __END__
     | carol | brig gen | 8745     |
     +-------+----------+----------+
 
-=head1 CLASS VARS
+=head1 FORMAT VARIABLES
 
-  If you want to change the characters used for making the lines and separators, these are the class vars to use:
+=over 4
 
-    $Text::Table::Tiny::COLUMN_SEPARATOR = '|';
-    $Text::Table::Tiny::ROW_SEPARATOR = '-';
-    $Text::Table::Tiny::CORNER_MARKER = '+';
-    $Text::Table::Tiny::HEADER_ROW_SEPARATOR = '=';
-    $Text::Table::Tiny::HEADER_CORNER_MARKER = 'O';
+=item *
+
+$Text::Table::Tiny::COLUMN_SEPARATOR = '|';
+
+=item *
+
+$Text::Table::Tiny::ROW_SEPARATOR = '-';
+
+=item *
+
+$Text::Table::Tiny::CORNER_MARKER = '+';
+
+=item *
+
+$Text::Table::Tiny::HEADER_ROW_SEPARATOR = '=';
+
+=item *
+
+$Text::Table::Tiny::HEADER_CORNER_MARKER = 'O';
+
+=back
+
+=head1 AUTHOR
+
+Creighton Higgins <chiggins@chiggins.com>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2012 by Creighton Higgins.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 

@@ -1,9 +1,9 @@
 
 
 This archive contains the distribution Text-Table-Tiny,
-version 0.001:
+version 0.02:
 
-  makes simple text tables
+  makes simple tables from two-dimensional arrays, with limited templating options
 
 This software is copyright (c) 2012 by Creighton Higgins.
 

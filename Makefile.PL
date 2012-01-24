@@ -9,9 +9,11 @@ use ExtUtils::MakeMaker 6.30;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "makes simple text tables",
+  "ABSTRACT" => "makes simple tables from two-dimensional arrays, with limited templating options",
   "AUTHOR" => "Creighton Higgins <chiggins\@chiggins.com>",
-  "BUILD_REQUIRES" => {},
+  "BUILD_REQUIRES" => {
+    "Test::More" => 0
+  },
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
   },
@@ -19,10 +21,14 @@ my %WriteMakefileArgs = (
   "EXE_FILES" => [],
   "LICENSE" => "perl",
   "NAME" => "Text::Table::Tiny",
-  "PREREQ_PM" => {},
-  "VERSION" => "0.001",
+  "PREREQ_PM" => {
+    "List::Util" => 0,
+    "strict" => 0,
+    "warnings" => 0
+  },
+  "VERSION" => "0.02",
   "test" => {
-    "TESTS" => ""
+    "TESTS" => "t/*.t"
   }
 );
 

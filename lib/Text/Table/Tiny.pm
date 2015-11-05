@@ -1,8 +1,12 @@
+use 5.006;
 use strict;
 use warnings;
 package Text::Table::Tiny;
 
+use parent 'Exporter';
 use List::Util qw();
+
+our @EXPORT_OK = qw/ generate_table /;
 
 # ABSTRACT: makes simple tables from two-dimensional arrays, with limited templating options
 
@@ -13,7 +17,7 @@ our $CORNER_MARKER = '+';
 our $HEADER_ROW_SEPARATOR = '=';
 our $HEADER_CORNER_MARKER = 'O';
 
-sub table {
+sub generate_table {
 
     my %params = @_;
     my $rows = $params{rows} or die "Must provide rows!";
@@ -35,11 +39,11 @@ sub table {
     my $data_begins = 0;
     if ( $params{header_row} ) {
         my $header_row = $rows->[0];
-	$data_begins++;
+        $data_begins++;
         push @table, sprintf(
-	    $format, 
-	    map { defined($header_row->[$_]) ? $header_row->[$_] : '' } (0..$max_index)
-	);
+                         $format, 
+                         map { defined($header_row->[$_]) ? $header_row->[$_] : '' } (0..$max_index)
+                     );
         push @table, $params{separate_rows} ? $head_row_sep : $row_sep;
     }
 
@@ -96,40 +100,23 @@ sub _get_header_row_separator {
     return "$HEADER_CORNER_MARKER$HEADER_ROW_SEPARATOR".join("$HEADER_ROW_SEPARATOR$HEADER_CORNER_MARKER$HEADER_ROW_SEPARATOR",map { $HEADER_ROW_SEPARATOR x $_ } @$widths)."$HEADER_ROW_SEPARATOR$HEADER_CORNER_MARKER";
 }
 
+# Back-compat: 'table' is an alias for 'generate_table', but isn't exported
+*table = \&generate_table;
+
 1;
 
 __END__
+
 =pod
 
 =head1 NAME
 
-Text::Table::Tiny - makes simple tables from two-dimensional arrays, with limited templating options
-
-=head1 VERSION
-
-version 0.04
-
-=head1 OPTIONS
-
-=over 4
-
-=item *
-
-header_row
-
-true/false, designate first row in $rows as a header row and separate with a line
-
-=item *
-
-separate_rows
-
-true/false put a separator line between rows and use a thicker line for header separator
-
-=back
+Text::Table::Tiny - simple text tables from 2D arrays, with limited templating options
 
 =head1 SYNOPSIS
 
-    use Text::Table::Tiny;
+    use Text::Table::Tiny 0.04 qw/ generate_table /;
+
     my $rows = [
         # header row
         ['Name', 'Rank', 'Serial'],
@@ -138,19 +125,15 @@ true/false put a separator line between rows and use a thicker line for header s
         ['bob',   'cpl', '98765321'],
         ['carol', 'brig gen', '8745'],
     ];
-    # separate rows puts lines between rows, header_row says that the first row is headers
-    print Text::Table::Tiny::table(rows => $rows, separate_rows => 1, header_row => 1);
+    print generate_table(rows => $rows, header_row => 1);
 
-  Example in the synopsis: Text::Table::Tiny::table(rows => $rows);
 
-    +-------+----------+----------+
-    | Name  | Rank     | Serial   |
-    | alice | pvt      | 123456   |
-    | bob   | cpl      | 98765321 |
-    | carol | brig gen | 8745     |
-    +-------+----------+----------+
+=head1 DESCRIPTION
 
-  with header_row: Text::Table::Tiny::table(rows => $rows, header_row => 1);
+This module provides a single function, C<generate_table>, which formats
+a two-dimensional array of data as a text table.
+
+The example shown in the SYNOPSIS generates the following table:
 
     +-------+----------+----------+
     | Name  | Rank     | Serial   |
@@ -160,7 +143,68 @@ true/false put a separator line between rows and use a thicker line for header s
     | carol | brig gen | 8745     |
     +-------+----------+----------+
 
-  with header_row and separate_rows: Text::Table::Tiny::table(rows => $rows, header_row => 1, separate_rows => 1);
+B<NOTE>: the interface changed with version 0.04, so if you
+use the C<generate_table()> function illustrated above,
+then you need to require at least version 0.04 of this module,
+as shown in the SYNOPSIS.
+
+
+=head2 OPTIONS
+
+The C<generate_table> function understands three arguments,
+which are passed as a hash.
+
+=over 4
+
+
+=item *
+
+rows
+
+Takes an array reference which should contain one or more rows
+of data, where each row is an array reference.
+
+
+=item *
+
+header_row
+
+If given a true value, the first row in the data will be interpreted
+as a header row, and separated from the rest of the table with a ruled line.
+
+
+=item *
+
+separate_rows
+
+If given a true value, a separator line will be drawn between every row in
+the table,
+and a thicker line will be used for the header separator.
+
+
+=back
+
+
+=head2 EXAMPLES
+
+If you just pass the data and no other options:
+
+ generate_table(rows => $rows);
+
+You get minimal ruling:
+
+    +-------+----------+----------+
+    | Name  | Rank     | Serial   |
+    | alice | pvt      | 123456   |
+    | bob   | cpl      | 98765321 |
+    | carol | brig gen | 8745     |
+    +-------+----------+----------+
+
+If you want lines between every row, and also want a separate header:
+
+ generate_table(rows => $rows, header_row => 1, separate_rows => 1);
+
+You get the maximally ornate:
 
     +-------+----------+----------+
     | Name  | Rank     | Serial   |
@@ -173,6 +217,11 @@ true/false put a separator line between rows and use a thicker line for header s
     +-------+----------+----------+
 
 =head1 FORMAT VARIABLES
+
+You can set a number of package variables inside the C<Text::Table::Tiny> package
+to configure the appearance of the table.
+This interface is likely to be deprecated in the future,
+and some other mechanism provided.
 
 =over 4
 
@@ -198,9 +247,38 @@ $Text::Table::Tiny::HEADER_CORNER_MARKER = 'O';
 
 =back
 
+
+=head1 PREVIOUS INTERFACE
+
+Prior to version 0.04 this module provided a function called C<table()>,
+which wasn't available for export. It took exactly the same arguments:
+
+ use Text::Table::Tiny;
+ my $rows = [ ... ];
+ print Text::Table::Tiny::table(rows => $rows, separate_rows => 1, header_row => 1);
+
+For backwards compatibility this interface is still supported.
+The C<table()> function isn't available for export though.
+
+
+=head1 SEE ALSO
+
+There are many modules for formatting text tables on CPAN.
+A good number of them are listed in the
+L<See Also|https://metacpan.org/pod/Text::Table::Manifold#See-Also>
+section of the documentation for L<Text::Table::Manifold>.
+
+
+=head1 REPOSITORY
+
+L<https://github.com/neilb/Text-Table-Tiny>
+
+
 =head1 AUTHOR
 
 Creighton Higgins <chiggins@chiggins.com>
+
+Now maintained by Neil Bowers <neilb@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 

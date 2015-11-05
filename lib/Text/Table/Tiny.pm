@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 package Text::Table::Tiny;
+
 use List::Util qw();
 
 # ABSTRACT: makes simple tables from two-dimensional arrays, with limited templating options
@@ -106,7 +107,7 @@ Text::Table::Tiny - makes simple tables from two-dimensional arrays, with limite
 
 =head1 VERSION
 
-version 0.03
+version 0.04
 
 =head1 OPTIONS
 

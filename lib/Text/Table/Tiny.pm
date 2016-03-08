@@ -44,20 +44,31 @@ sub generate_table {
                          $format, 
                          map { defined($header_row->[$_]) ? $header_row->[$_] : '' } (0..$max_index)
                      );
-        push @table, $params{separate_rows} ? $head_row_sep : $row_sep;
+        push @table, $params{separate_rows} || $params{group_rows_by} ? $head_row_sep : $row_sep;
     }
 
     # then the data
-    foreach my $row ( @{ $rows }[$data_begins..$#$rows] ) {
+    foreach my $row_num ( $data_begins .. $#$rows ) {
+        my $row = $rows->[$row_num];
+
         push @table, sprintf(
 	    $format, 
 	    map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
 	);
-        push @table, $row_sep if $params{separate_rows};
+
+        my $next_row = $row_num < $#$rows ? $rows->[$row_num + 1] : undef;
+        my $is_last_in_rowgroup = $params{group_rows_by}
+                        && not _is_same_colgroup($row, $next_row, $params{group_rows_by});
+        if ($params{separate_rows}) {
+            push @table, $is_last_in_rowgroup ? $head_row_sep : $row_sep;
+        }
+        elsif ($is_last_in_rowgroup) {
+            push @table, $row_sep;
+        }
     }
 
     # this will have already done the bottom if called explicitly
-    push @table, $row_sep unless $params{separate_rows};
+    push @table, $row_sep unless $params{separate_rows} || $params{group_rows_by};
     return join("\n",grep {$_} @table);
 }
 
@@ -98,6 +109,17 @@ sub _get_row_separator {
 sub _get_header_row_separator {
     my $widths = shift;
     return "$HEADER_CORNER_MARKER$HEADER_ROW_SEPARATOR".join("$HEADER_ROW_SEPARATOR$HEADER_CORNER_MARKER$HEADER_ROW_SEPARATOR",map { $HEADER_ROW_SEPARATOR x $_ } @$widths)."$HEADER_ROW_SEPARATOR$HEADER_CORNER_MARKER";
+}
+
+sub _is_same_colgroup {
+    my ($curr_row, $next_row, $col_spec) = @_;
+
+    return unless $curr_row && $next_row;
+
+    my @curr_columns = map { defined $_ ? $_ : "" } @$curr_row[@$col_spec];
+    my @next_columns = map { defined $_ ? $_ : "" } @$next_row[@$col_spec];
+
+    return "@curr_columns" eq "@next_columns";
 }
 
 # Back-compat: 'table' is an alias for 'generate_table', but isn't exported
@@ -215,6 +237,65 @@ You get the maximally ornate:
     +-------+----------+----------+
     | carol | brig gen | 8745     |
     +-------+----------+----------+
+
+If you want to group consecutive rows which have same values in certain columns:
+
+Assuming the following data:
+
+    my $rows = [
+        # header row
+        ['Name', 'Rank', 'Serial'],
+        # rows
+        ['alice', 'pvt', '123456'],
+        ['alison', 'pvt', '123457'],
+        ['bob',   'cpl', '98765321'],
+        ['carol', 'brig gen', '8745'],
+        ['darla', 'brig gen', '9745'],
+    ];
+    print generate_table(rows => $rows, header_row => 1, group_rows_by => [1]);
+
+This will group all consecutive rows with the same Rank (column 1) value.
+
+    +--------+----------+----------+
+    | Name   | Rank     | Serial   |
+    O========O==========O==========O
+    | alice  | pvt      | 123456   |
+    | alison | pvt      | 123457   |
+    +--------+----------+----------+
+    | bob    | cpl      | 98765321 |
+    +--------+----------+----------+
+    | carol  | brig gen | 8745     |
+    | darla  | brig gen | 8745     |
+    +--------+----------+----------+
+
+B<NOTE>: The C<group_rows_by> option does *not* sort the rows to keep
+rows with same column values together. The input list of rows is
+assumed to be already ordered.
+
+When both C<separate_rows> option and C<group_rows_by> option are
+specified, the more ornate separator is used for separating rowgroups,
+and the ordinary row separator is used for separating rows within the
+same group.
+
+    print generate_table(rows => $rows, header_row => 1,
+                         separate_rows => 1
+                         group_rows_by => [1]);
+
+This will produce the following output:
+
+    +--------+----------+----------+
+    | Name   | Rank     | Serial   |
+    O========O==========O==========O
+    | alice  | pvt      | 123456   |
+    +--------+----------+----------+
+    | alison | pvt      | 123457   |
+    O========O==========O==========O
+    | bob    | cpl      | 98765321 |
+    O========O==========O==========O
+    | carol  | brig gen | 8745     |
+    +--------+----------+----------+
+    | darla  | brig gen | 9745     |
+    O========O==========O==========O
 
 =head1 FORMAT VARIABLES
 

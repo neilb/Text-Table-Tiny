@@ -9,7 +9,7 @@ some basic capabilities for configuring the appearance of the tables.
 You can read a nicely formatted version of the documentation for
 this module online:
 
-    https://metacpan.org/pod/Module::Info
+    https://metacpan.org/pod/Text::Table::Tiny
 
 
 You should be able to install this using your usual method for installing

@@ -1,5 +1,8 @@
 Revision history for Perl module Text::Table::Tiny
 
+0.05 2016-03-?? NEILB
+    - Enabled Travis-CI. PR from Petr Kletečka++.
+
 0.04 2015-11-05 NEILB
     - Added this Changes file. Addresses RT#97285
     - Now use Exporter, and provide an optional export generate_table(),

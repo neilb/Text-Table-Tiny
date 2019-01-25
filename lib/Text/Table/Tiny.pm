@@ -5,6 +5,7 @@ package Text::Table::Tiny;
 
 use parent 'Exporter';
 use List::Util qw();
+use Carp qw/ croak /;
 
 our @EXPORT_OK = qw/ generate_table /;
 
@@ -20,7 +21,7 @@ our $HEADER_CORNER_MARKER = 'O';
 sub generate_table {
 
     my %params = @_;
-    my $rows = $params{rows} or die "Must provide rows!";
+    my $rows = $params{rows} or croak "generate_table(): you must pass the 'rows' argument!";
 
     # foreach col, get the biggest width
     my $widths = _maxwidths($rows);

@@ -1,6 +1,8 @@
 Revision history for Perl module Text::Table::Tiny
 
-0.05 2016-03-?? NEILB
+0.05 2019-01-25 NEILB
+    - generate_table() was die'ing if no rows were passed, which resulted
+      in a suboptimal error message. Now croaks; added fatal test for this.
     - Enabled Travis-CI. PR from Petr Kletečka++.
 
 0.04 2015-11-05 NEILB

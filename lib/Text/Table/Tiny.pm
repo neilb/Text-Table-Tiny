@@ -34,7 +34,7 @@ sub generate_table {
 
     # here we go...
     my @table;
-    push @table, $row_sep;
+    push(@table, $row_sep) unless $params{top_and_tail};
 
     # if the first row's a header:
     my $data_begins = 0;
@@ -49,23 +49,25 @@ sub generate_table {
     }
 
     # then the data
+    my $row_number = 0;
+    my $last_line_number = int(@$rows);
+    $last_line_number-- if $params{header_row};
     foreach my $row ( @{ $rows }[$data_begins..$#$rows] ) {
-        push @table, sprintf(
-	    $format, 
-	    map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
-	);
-        push @table, $row_sep if $params{separate_rows};
+        $row_number++;
+        push(@table, sprintf(
+                             $format, 
+                             map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
+                            ));
+
+        push(@table, $row_sep) if $params{separate_rows} && (!$params{top_and_tail} || $row_number < $last_line_number);
+
     }
 
     # this will have already done the bottom if called explicitly
-    push @table, $row_sep unless $params{separate_rows};
+    push(@table, $row_sep) unless $params{separate_rows} || $params{top_and_tail};
     return join("\n",grep {$_} @table);
 }
 
-sub _get_cols_and_rows ($) {
-    my $rows = shift;
-    return ( List::Util::max( map { scalar @$_ } @$rows), scalar @$rows);
-}
 
 sub _maxwidths {
     my $rows = shift;
@@ -150,7 +152,7 @@ then you need to require at least version 0.04 of this module,
 as shown in the SYNOPSIS.
 
 
-=head2 OPTIONS
+=head2 generate_table()
 
 The C<generate_table> function understands three arguments,
 which are passed as a hash.
@@ -182,6 +184,12 @@ If given a true value, a separator line will be drawn between every row in
 the table,
 and a thicker line will be used for the header separator.
 
+=item *
+
+top_and_tail
+
+If given a true value, then the top and bottom border lines will be skipped.
+This reduces the vertical height of the generated table.
 
 =back
 

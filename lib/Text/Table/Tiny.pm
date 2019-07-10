@@ -7,7 +7,7 @@ use parent 'Exporter';
 use List::Util qw();
 use Carp qw/ croak /;
 
-our @EXPORT_OK = qw/ generate_table /;
+our @EXPORT_OK = qw/ generate_table generate_markdown_table /;
 
 # ABSTRACT: makes simple tables from two-dimensional arrays, with limited templating options
 
@@ -42,7 +42,7 @@ sub generate_table {
         my $header_row = $rows->[0];
         $data_begins++;
         push @table, sprintf(
-                         $format, 
+                         $format,
                          map { defined($header_row->[$_]) ? $header_row->[$_] : '' } (0..$max_index)
                      );
         push @table, $params{separate_rows} ? $head_row_sep : $row_sep;
@@ -55,7 +55,7 @@ sub generate_table {
     foreach my $row ( @{ $rows }[$data_begins..$#$rows] ) {
         $row_number++;
         push(@table, sprintf(
-                             $format, 
+                             $format,
                              map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
                             ));
 
@@ -68,6 +68,14 @@ sub generate_table {
     return join("\n",grep {$_} @table);
 }
 
+sub generate_markdown_table {
+  $CORNER_MARKER = '|';
+  $HEADER_ROW_SEPARATOR = '-';
+  $HEADER_CORNER_MARKER = '|';
+  my @ARGS = (@_);
+  unshift @ARGS, ( header_row => 1, top_and_tail => 1 );
+  return Text::Table::Tiny::generate_table(@ARGS);
+}
 
 sub _maxwidths {
     my $rows = shift;
@@ -133,8 +141,11 @@ Text::Table::Tiny - simple text tables from 2D arrays, with limited templating o
 
 =head1 DESCRIPTION
 
-This module provides a single function, C<generate_table>, which formats
+This module provides, C<generate_table>, which formats
 a two-dimensional array of data as a text table.
+
+A second function C<generate_markdown_table>, formats the table
+as markdown and should not be passed any other formatting directives.
 
 The example shown in the SYNOPSIS generates the following table:
 
@@ -193,6 +204,16 @@ This reduces the vertical height of the generated table.
 
 =back
 
+=head2 generate_markdown_table()
+
+Calls C<generate_table()> with all of the settings and parameters
+necessary to return a table that is valid for most markdown
+interpreters.
+
+You should not pass or set any other formatting options when using
+C<generate_markdown_table>.
+
+The first row in the data from rows => will be used as the header row.
 
 =head2 EXAMPLES
 
@@ -224,6 +245,16 @@ You get the maximally ornate:
     +-------+----------+----------+
     | carol | brig gen | 8745     |
     +-------+----------+----------+
+
+If you want your table in MarkDown compatible format:
+
+ generate_markdown_table( rows => $rows );
+
+    | Name  | Rank     | Serial   |                 |
+    |-------|----------|----------|
+    | alice | pvt      | 123456   |
+    | bob   | cpl      | 98765321 |
+    | carol | brig gen | 8745     |
 
 =head1 FORMAT VARIABLES
 

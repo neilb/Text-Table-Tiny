@@ -1,5 +1,8 @@
 Revision history for Perl module Text::Table::Tiny
 
+0.05_01 2019-08-11 NEILB
+    - Added a testsuite for mucking around with package variables
+
 0.05 2019-01-25 NEILB
     - generate_table() was die'ing if no rows were passed, which resulted
       in a suboptimal error message. Now croaks; added fatal test for this.

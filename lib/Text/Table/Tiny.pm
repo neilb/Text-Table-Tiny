@@ -22,9 +22,10 @@ sub generate_table {
 
     my %params = @_;
     my $rows = $params{rows} or croak "generate_table(): you must pass the 'rows' argument!";
+    my $ansi_color = $params{'ansi'};
 
     # foreach col, get the biggest width
-    my $widths = _maxwidths($rows);
+    my $widths = _maxwidths($rows, $ansi_color);
     my $max_index = _max_array_index($rows);
 
     # use that to get the field format and separators
@@ -53,7 +54,21 @@ sub generate_table {
     my $last_line_number = int(@$rows);
     $last_line_number-- if $params{header_row};
     foreach my $row ( @{ $rows }[$data_begins..$#$rows] ) {
+        # If there is ANSI color we strip it off, calculate the real length
+        # and then add spaces to the end of the string to correct the difference
+        if ($ansi_color) {
+            for (my $y = 0; $y < scalar(@$row); $y++) {
+                my $item      = $row->[$y] // '';
+                my $real_len  = length(remove_ansi_color($item));
+                my $row_len   = $widths->[$y];
+                my $diff      = $row_len - $real_len;
+                my $spacer    = " " x $diff;
+                $row->[$y]   .= $spacer;
+            }
+        }
+
         $row_number++;
+
         push(@table, sprintf(
                              $format, 
                              map { defined($row->[$_]) ? $row->[$_] : '' } (0..$max_index)
@@ -71,15 +86,30 @@ sub generate_table {
 
 sub _maxwidths {
     my $rows = shift;
+    my $ansi = shift;
+
     # what's the longest array in this list of arrays?
     my $max_index = _max_array_index($rows);
     my $widths = [];
     for my $i (0..$max_index) {
         # go through the $i-th element of each array, find the longest
-        my $max = List::Util::max(map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
+        my $max;
+        if ($ansi) {
+            $max = List::Util::max(map {defined $$_[$i] ? length(remove_ansi_color($$_[$i])) : 0} @$rows);
+        } else {
+            $max = List::Util::max(map {defined $$_[$i] ? length($$_[$i]) : 0} @$rows);
+        }
         push @$widths, $max;
     }
+
     return $widths;
+}
+
+sub remove_ansi_color {
+    my $str = shift();
+    $str =~ s/\e\[\d*(;\d+)*m//g;
+
+    return $str;
 }
 
 # return highest top-index from all rows in case they're different lengths
@@ -191,6 +221,13 @@ top_and_tail
 If given a true value, then the top and bottom border lines will be skipped.
 This reduces the vertical height of the generated table.
 
+=item *
+
+ansi
+
+Indicates the table data contains ANSI colors. ANSI color throws off the
+calculation of of row widths so we have to compensate a bit.
+
 =back
 
 
@@ -298,3 +335,4 @@ the same terms as the Perl 5 programming language system itself.
 
 =cut
 
+# vim: tabstop=4 shiftwidth=4 expandtab autoindent softtabstop=4

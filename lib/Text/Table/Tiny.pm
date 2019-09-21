@@ -63,7 +63,8 @@ sub generate_table {
                 my $row_len   = $widths->[$y];
                 my $diff      = $row_len - $real_len;
                 my $spacer    = " " x $diff;
-                $row->[$y]   .= $spacer;
+                my $reset     = "\e[0m";
+                $row->[$y]   .= $reset . $spacer;
             }
         }
 

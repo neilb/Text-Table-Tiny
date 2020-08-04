@@ -150,17 +150,17 @@ sub _format_column
     my $pad = $param->{compact} ? '' : ' ';
 
     if ($align eq 'r' || $align eq 'right') {
-        return $pad.' ' x ($width - length($text)).$text.$pad;
+        return $pad.' ' x ($width - tty_length($text)).$text.$pad;
     }
     elsif ($align eq 'c' || $align eq 'center' || $align eq 'centre') {
-        my $total_spaces = $width - length($text);
+        my $total_spaces = $width - tty_length($text);
         my $left_spaces  = int($total_spaces / 2);
         my $right_spaces = $left_spaces;
         $right_spaces++ if $total_spaces % 2 == 1;
         return $pad.(' ' x $left_spaces).$text.(' ' x $right_spaces).$pad;
     }
     else {
-        return $pad.$text.' ' x ($width - length($text)).$pad;
+        return $pad.$text.' ' x ($width - tty_length($text)).$pad;
     }
 }
 
@@ -172,11 +172,18 @@ sub _calculate_widths
         my @columns = @$row;
         for (my $i = 0; $i < @columns; $i++) {
             next unless defined($columns[$i]);
-            $widths[$i] = length($columns[$i]) if !defined($widths[$i])
-                                              || length($columns[$i]) > $widths[$i];
+            $widths[$i] = tty_length($columns[$i]) if !defined($widths[$i])
+                                                   || tty_length($columns[$i]) > $widths[$i];
         }
     }
     return @widths;
+}
+
+sub tty_length
+{
+    my $string = shift;
+    $string =~ s/\e\[[0-9]+(;[0-9]+)?[ABCDEFGHJKSTfmin]//msg;
+    return length($string);
 }
 
 # Back-compat: 'table' is an alias for 'generate_table', but isn't exported
@@ -276,6 +283,7 @@ This takes an array ref with one entry per column,
 to specify the alignment of that column.
 Legal values are 'l', 'c', and 'r'.
 You can also specify a single alignment for all columns.
+ANSI escape codes are handled.
 
 =item *
 

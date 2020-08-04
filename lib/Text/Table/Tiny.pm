@@ -4,8 +4,9 @@ use 5.010;
 use strict;
 use warnings;
 use utf8;
-use Carp qw/ croak /;
 use parent 'Exporter';
+use Carp         qw/ croak /;
+use Ref::Util    qw/ is_arrayref is_ref /;
 our @EXPORT_OK = qw/ generate_table /;
 
 # Legacy package globals, that can be used to customise the look.
@@ -43,8 +44,16 @@ sub generate_table
     }
 
     my $header;
-    my $astring = $param{align} // 'l' x int(@widths);
-    my @align   = split('', $astring);
+    my @align;
+    if (defined $param{align}) {
+        @align = is_arrayref($param{align})
+               ? @{ $param{align} }
+               : ($param{align}) x int(@widths)
+               ;
+    }
+    else {
+        @align = ('l') x int(@widths);
+    }
 
     $header = shift @rows if $param{header_row};
 
@@ -140,10 +149,10 @@ sub _format_column
     my ($text, $width, $align, $param, $char) = @_;
     my $pad = $param->{compact} ? '' : ' ';
 
-    if ($align eq 'r') {
+    if ($align eq 'r' || $align eq 'right') {
         return $pad.' ' x ($width - length($text)).$text.$pad;
     }
-    elsif ($align eq 'c') {
+    elsif ($align eq 'c' || $align eq 'center' || $align eq 'centre') {
         my $total_spaces = $width - length($text);
         my $left_spaces  = int($total_spaces / 2);
         my $right_spaces = $left_spaces;
@@ -266,6 +275,7 @@ align
 This takes an array ref with one entry per column,
 to specify the alignment of that column.
 Legal values are 'l', 'c', and 'r'.
+You can also specify a single alignment for all columns.
 
 =item *
 

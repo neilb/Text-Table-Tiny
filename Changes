@@ -1,5 +1,9 @@
 Revision history for Perl module Text::Table::Tiny
 
+0.05_02 2020-08-04 NEILB
+    - The align parameter was still expecting previous idea of an 'lrc' string.
+    - Can now specify a single alignment which applies to all columns.
+
 0.05_01 2020-08-03 NEILB
     - Complete rewrite to add new formatting options.
     - See http://neilb.org/2019/08/06/text-table-tiny-changes.html

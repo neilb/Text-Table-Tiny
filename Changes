@@ -3,6 +3,7 @@ Revision history for Perl module Text::Table::Tiny
 0.05_03 2020-08-04 NEILB
     - Added a bunch of examples to the documentation
     - Mentioned in the doc that you need to binmode with boxrule style
+    - Set Github issues as the bugtracker
 
 0.05_02 2020-08-04 NEILB
     - The align parameter was still expecting previous idea of an 'lrc' string.

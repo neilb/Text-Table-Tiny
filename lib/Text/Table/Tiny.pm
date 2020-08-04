@@ -293,6 +293,9 @@ Specifies the format of the output table.
 The default is C<'classic'>,
 but other options are C<'boxrule'> and C<'norule'>.
 
+If you use the C<boxrule> style,
+you'll probably need to run C<binmode(STDOUT, ':utf8')>.
+
 =item *
 
 compact
@@ -318,21 +321,44 @@ You get minimal ruling:
     | carol | brig gen | 8745     |
     +-------+----------+----------+
 
-If you want lines between every row, and also want a separate header:
+If you want a separate header, set the header_row option to a true value:
 
- generate_table(rows => $rows, header_row => 1, separate_rows => 1);
+ generate_table(rows => $rows, header_row => 1);
 
-You get the maximally ornate:
+This will generate the following:
 
     +-------+----------+----------+
     | Name  | Rank     | Serial   |
-    O=======O==========O==========O
+    +-------+----------+----------+
     | alice | pvt      | 123456   |
-    +-------+----------+----------+
     | bob   | cpl      | 98765321 |
-    +-------+----------+----------+
     | carol | brig gen | 8745     |
     +-------+----------+----------+
+
+To take up fewer lines, you can miss out the top and bottom
+rules, by setting C<top_and_tail> to a true value:
+
+ generate_table(rows => $rows, header_row => 1, top_and_tail => 1);
+
+This will generate the following:
+
+    | Name  | Rank     | Serial   |
+    +-------+----------+----------+
+    | alice | pvt      | 123456   |
+    | bob   | cpl      | 98765321 |
+    | carol | brig gen | 8745     |
+
+Setting C<compact> to a true value will remove the padding in each column:
+
+ generate_table(rows => $rows, header_row => 1, top_and_tail => 1, compact => 1);
+
+This will generate the following:
+
+    |Name |Rank    |Serial  |
+    +-----+--------+--------+
+    |alice|pvt     |123456  |
+    |bob  |cpl     |98765321|
+    |carol|brig gen|8745    |
 
 
 =head1 SEE ALSO

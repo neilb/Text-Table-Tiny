@@ -1,7 +1,8 @@
 Revision history for Perl module Text::Table::Tiny
 
-0.05_01 2019-08-11 NEILB
-    - Added a testsuite for mucking around with package variables
+0.05_01 2020-08-03 NEILB
+    - Complete rewrite to add new formatting options.
+    - See http://neilb.org/2019/08/06/text-table-tiny-changes.html
 
 0.05 2019-01-25 NEILB
     - generate_table() was die'ing if no rows were passed, which resulted

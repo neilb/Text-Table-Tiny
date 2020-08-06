@@ -195,21 +195,24 @@ __END__
 
 =pod
 
+=encoding utf8
+
 =head1 NAME
 
 Text::Table::Tiny - generate simple text tables from 2D arrays
 
 =head1 SYNOPSIS
 
-    use Text::Table::Tiny 0.04 qw/ generate_table /;
+ use Text::Table::Tiny 0.04 qw/ generate_table /;
 
-    my $rows = [
-        ['Name',  'Rank',     'Serial'],    # header row
-        ['alice', 'pvt',      '123456'],    # body rows
-        ['bob',   'cpl',      '98765321'],
-        ['carol', 'brig gen', '8745'],
-    ];
-    print generate_table(rows => $rows, header_row => 1);
+ my $rows = [
+   [qw/ Pokemon     Type     Count /],
+   [qw/ Abra        Psychic      5 /],
+   [qw/ Ekans       Poison     123 /],
+   [qw/ Feraligatr  Water     5678 /],
+ ];
+
+ print generate_table(rows => $rows, header_row => 1), "\n";
 
 
 =head1 DESCRIPTION
@@ -221,13 +224,13 @@ but the intention is that the default option is good enough for most uses.
 
 The example shown in the SYNOPSIS generates the following table:
 
-    +-------+----------+----------+
-    | Name  | Rank     | Serial   |
-    +-------+----------+----------+
-    | alice | pvt      | 123456   |
-    | bob   | cpl      | 98765321 |
-    | carol | brig gen | 8745     |
-    +-------+----------+----------+
+ +------------+---------+-------+
+ | Pokemon    | Type    | Count |
+ +------------+---------+-------+
+ | Abra       | Psychic | 5     |
+ | Ekans      | Poison  | 123   |
+ | Feraligatr | Water   | 5678  |
+ +------------+---------+-------+
 
 B<NOTE>: the interface changed with version 0.04, so if you
 use the C<generate_table()> function illustrated above,
@@ -314,51 +317,94 @@ If you just pass the data and no other options:
 
 You get minimal ruling:
 
-    +-------+----------+----------+
-    | Name  | Rank     | Serial   |
-    | alice | pvt      | 123456   |
-    | bob   | cpl      | 98765321 |
-    | carol | brig gen | 8745     |
-    +-------+----------+----------+
+ +------------+---------+-------+
+ | Pokemon    | Type    | Count |
+ | Abra       | Psychic | 5     |
+ | Ekans      | Poison  | 123   |
+ | Feraligatr | Water   | 5678  |
+ +------------+---------+-------+
 
-If you want a separate header, set the header_row option to a true value:
+If you want a separate header, set the header_row option to a true value,
+as shown in the SYNOPSIS.
 
- generate_table(rows => $rows, header_row => 1);
-
-This will generate the following:
-
-    +-------+----------+----------+
-    | Name  | Rank     | Serial   |
-    +-------+----------+----------+
-    | alice | pvt      | 123456   |
-    | bob   | cpl      | 98765321 |
-    | carol | brig gen | 8745     |
-    +-------+----------+----------+
-
-To take up fewer lines, you can miss out the top and bottom
-rules, by setting C<top_and_tail> to a true value:
+To take up fewer lines,
+you can miss out the top and bottom rules,
+by setting C<top_and_tail> to a true value:
 
  generate_table(rows => $rows, header_row => 1, top_and_tail => 1);
 
 This will generate the following:
 
-    | Name  | Rank     | Serial   |
-    +-------+----------+----------+
-    | alice | pvt      | 123456   |
-    | bob   | cpl      | 98765321 |
-    | carol | brig gen | 8745     |
+ | Pokemon    | Type    | Count |
+ +------------+---------+-------+
+ | Abra       | Psychic | 5     |
+ | Ekans      | Poison  | 123   |
+ | Feraligatr | Water   | 5678  |
 
-Setting C<compact> to a true value will remove the padding in each column:
+If you want a more stylish looking table,
+set the C<style> parameter to C<'boxrule'>:
 
- generate_table(rows => $rows, header_row => 1, top_and_tail => 1, compact => 1);
+ binmode(STDOUT,':utf8');
+ generate_table(rows => $rows, header_row => 1, style => 'boxrule');
 
-This will generate the following:
+This uses the ANSI box rule characters.
+Note that you will need to ensure UTF output.
 
-    |Name |Rank    |Serial  |
-    +-----+--------+--------+
-    |alice|pvt     |123456  |
-    |bob  |cpl     |98765321|
-    |carol|brig gen|8745    |
+ ┌────────────┬─────────┬───────┐
+ │ Pokemon    │ Type    │ Count │
+ ├────────────┼─────────┼───────┤
+ │ Abra       │ Psychic │ 5     │
+ │ Ekans      │ Poison  │ 123   │
+ │ Feraligatr │ Water   │ 5678  │
+ └────────────┴─────────┴───────┘
+
+You might want to right-align numeric values:
+
+ generate_table(rows => $rows, header_row => 1, style => 'boxrule', align => [qw/ l l r /]);
+
+The C<align> parameter can either take an arrayref,
+or a string with an alignment to apply to all columns:
+
+ ┌────────────┬─────────┬───────┐
+ │ Pokemon    │ Type    │ Count │
+ ├────────────┼─────────┼───────┤
+ │ Abra       │ Psychic │     5 │
+ │ Ekans      │ Poison  │   123 │
+ │ Feraligatr │ Water   │  5678 │
+ └────────────┴─────────┴───────┘
+
+If you're using the boxrule style,
+you might feel you can remove the padding on either side of every column,
+done by setting C<compact> to a true value:
+
+ ┌──────────┬───────┬─────┐
+ │Pokemon   │Type   │Count│
+ ├──────────┼───────┼─────┤
+ │Abra      │Psychic│    5│
+ │Ekans     │Poison │  123│
+ │Feraligatr│Water  │ 5678│
+ └──────────┴───────┴─────┘
+ 
+If you just want columnar output,
+use the C<norule> style:
+
+ generate_table( rows => $rows, style => 'norule', header_row => 1, align => [qw/ l l r/]);
+
+which results in:
+
+  
+  Pokemon      Type      Count
+  
+  Abra         Psychic       5
+  Ekans        Poison      123
+  Feraligatr   Water      5678
+   
+
+Note that everywhere you saw a line on the previous tables,
+there will be a space character in this version.
+So you may want to combine the C<top_and_tail> option,
+to suppress the extra blank lines before and after
+the body of the table.
 
 
 =head1 SEE ALSO

@@ -30,15 +30,20 @@ sub generate_table
     my $rows    = $param{rows} or croak "you must pass the 'rows' argument!";
     my @rows    = @$rows;
     my @widths  = _calculate_widths($rows);
-    $param{style} //= 'classic';
+
+    $param{style}  //= 'classic';
+
+    $param{indent} //= '';
+    $param{indent} = ' ' x $param{indent} if $param{indent} =~ /^[0-9]+$/;
+
     my $style   = $param{style};
     croak "unknown style '$style'" if not exists($charsets{ $style });
     my $char    = $charsets{$style};
 
     if ($style eq 'classic') {
         $char->{TLC} = $char->{TRC} = $char->{TT} = $char->{LT} = $char->{RT} = $char->{HC} = $char->{BLC} = $char->{BT} = $char->{BRC} = $CORNER_MARKER;
-        $char->{HR} = $ROW_SEPARATOR;
-        $char->{VR} = $COLUMN_SEPARATOR;
+        $char->{HR}  = $ROW_SEPARATOR;
+        $char->{VR}  = $COLUMN_SEPARATOR;
         $char->{FLT} = $char->{FRT} = $char->{FHC} = $HEADER_CORNER_MARKER;
         $char->{FHR} = $HEADER_ROW_SEPARATOR;
     }
@@ -77,7 +82,8 @@ sub _top_border
     return '' if $param->{top_and_tail};
     my $pad = $param->{compact} ? '' : $char->{HR};
 
-    return $char->{TLC}
+    return $param->{indent}
+           .$char->{TLC}
            .join($char->{TT}, map { $pad.($char->{HR} x $_).$pad } @$widths)
            .$char->{TRC}
            ."\n"
@@ -97,7 +103,8 @@ sub _rule_row
     my ($param, $widths, $le, $hr, $cross, $re) = @_;
     my $pad = $param->{compact} ? '' : $hr;
 
-    return $le
+    return $param->{indent}
+           .$le
            .join($cross, map { $pad.($hr x $_).$pad } @$widths)
            .$re
            ."\n"
@@ -133,7 +140,7 @@ sub _text_row
 {
     my ($param, $row, $widths, $align, $char) = @_;
     my @columns = @$row;
-    my $text = $char->{VR};
+    my $text = $param->{indent}.$char->{VR};
 
     for (my $i = 0; $i < @$widths; $i++) {
         $text .= _format_column($columns[$i] // '', $widths->[$i], $align->[$i] // 'l', $param, $char);
@@ -311,6 +318,18 @@ you'll probably need to run C<binmode(STDOUT, ':utf8')>.
 
 Added in 1.00.
 
+
+=item *
+
+indent
+
+Specify an indent that should be prefixed to every line
+of the generated table.
+This can either be a string of spaces,
+or an integer giving the number of spaces wanted.
+
+Added in 1.00.
+
 =item *
 
 compact
@@ -374,7 +393,7 @@ Note that you will need to ensure UTF output.
 
 You might want to right-align numeric values:
 
- generate_table(rows => $rows, header_row => 1, style => 'boxrule', align => [qw/ l l r /]);
+ generate_table( ... , align => [qw/ l l r /] );
 
 The C<align> parameter can either take an arrayref,
 or a string with an alignment to apply to all columns:
@@ -403,7 +422,7 @@ You can also ask for a rule between each row,
 in which case the header rule becomes stronger.
 This works best when combined with the boxrule style:
 
- generate_table( rows => $rows, style => 'boxrule', separate_rows => 1, header_row => 1, align => [qw/ l l r/]);
+ generate_table( ... , separate_rows => 1 );
 
 Which results in the following:
 
@@ -423,7 +442,7 @@ but I'm not sure you'd want to.
 If you just want columnar output,
 use the C<norule> style:
 
- generate_table( rows => $rows, style => 'norule', header_row => 1, align => [qw/ l l r/]);
+ generate_table( ... , style => 'norule' );
 
 which results in:
 

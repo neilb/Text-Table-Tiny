@@ -203,7 +203,7 @@ Text::Table::Tiny - generate simple text tables from 2D arrays
 
 =head1 SYNOPSIS
 
- use Text::Table::Tiny 0.04 qw/ generate_table /;
+ use Text::Table::Tiny 1.00 qw/ generate_table /;
 
  my $rows = [
    [qw/ Pokemon     Type     Count /],
@@ -237,12 +237,18 @@ use the C<generate_table()> function illustrated above,
 then you need to require at least version 0.04 of this module,
 as shown in the SYNOPSIS.
 
+B<NOTE 2>: some of the options described below were added in version 1.00,
+so your best bet is to require version 1.00,
+as per the SYNOPSIS.
+
 
 =head2 generate_table()
 
 The C<generate_table> function understands a number of arguments,
 which are passed as a hash.
 The only required argument is B<rows>.
+Where arguments were not supported in the original release,
+the first supporting version is noted.
 
 =over 4
 
@@ -278,6 +284,8 @@ top_and_tail
 If given a true value, then the top and bottom border lines will be skipped.
 This reduces the vertical height of the generated table.
 
+Added in 0.04.
+
 =item *
 
 align
@@ -287,6 +295,8 @@ to specify the alignment of that column.
 Legal values are 'l', 'c', and 'r'.
 You can also specify a single alignment for all columns.
 ANSI escape codes are handled.
+
+Added in 1.00.
 
 =item *
 
@@ -299,12 +309,16 @@ but other options are C<'boxrule'> and C<'norule'>.
 If you use the C<boxrule> style,
 you'll probably need to run C<binmode(STDOUT, ':utf8')>.
 
+Added in 1.00.
+
 =item *
 
 compact
 
 If set to a true value then we omit the single space padding on either
 side of every column.
+
+Added in 1.00.
 
 =back
 
@@ -384,6 +398,27 @@ done by setting C<compact> to a true value:
  │Ekans     │Poison │  123│
  │Feraligatr│Water  │ 5678│
  └──────────┴───────┴─────┘
+
+You can also ask for a rule between each row,
+in which case the header rule becomes stronger.
+This works best when combined with the boxrule style:
+
+ generate_table( rows => $rows, style => 'boxrule', separate_rows => 1, header_row => 1, align => [qw/ l l r/]);
+
+Which results in the following:
+
+ ┌────────────┬─────────┬───────┐
+ │ Pokemon    │ Type    │ Count │
+ ╞════════════╪═════════╪═══════╡
+ │ Abra       │ Psychic │     5 │
+ ├────────────┼─────────┼───────┤
+ │ Ekans      │ Poison  │   123 │
+ ├────────────┼─────────┼───────┤
+ │ Feraligatr │ Water   │  5678 │
+ └────────────┴─────────┴───────┘
+
+You can use this with the other styles,
+but I'm not sure you'd want to.
  
 If you just want columnar output,
 use the C<norule> style:

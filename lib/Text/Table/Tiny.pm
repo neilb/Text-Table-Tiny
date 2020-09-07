@@ -5,8 +5,10 @@ use strict;
 use warnings;
 use utf8;
 use parent 'Exporter';
-use Carp         qw/ croak /;
-use Ref::Util    qw/ is_arrayref is_ref /;
+use Carp                qw/ croak /;
+use Ref::Util           qw/ is_arrayref is_ref /;
+use String::TtyLength   qw/ tty_length /;
+
 our @EXPORT_OK = qw/ generate_table /;
 
 # Legacy package globals, that can be used to customise the look.
@@ -174,13 +176,6 @@ sub _calculate_widths
         }
     }
     return @widths;
-}
-
-sub tty_length
-{
-    my $string = shift;
-    $string =~ s/\e\[[0-9]+(;[0-9]+)?[ABCDEFGHJKSTfmin]//msg;
-    return length($string);
 }
 
 # Back-compat: 'table' is an alias for 'generate_table', but isn't exported

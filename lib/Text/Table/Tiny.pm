@@ -78,16 +78,6 @@ sub _top_border
 
     return '' if $param->{top_and_tail};
     return _rule_row($param, $widths, $char->{TLC}, $char->{HR}, $char->{TT}, $char->{TRC});
-
-    return '' if $param->{top_and_tail};
-    my $pad = $param->{compact} ? '' : $char->{HR};
-
-    return $param->{indent}
-           .$char->{TLC}
-           .join($char->{TT}, map { $pad.($char->{HR} x $_).$pad } @$widths)
-           .$char->{TRC}
-           ."\n"
-           ;
 }
 
 sub _bottom_border

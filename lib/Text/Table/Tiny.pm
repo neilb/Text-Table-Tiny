@@ -5,9 +5,9 @@ use strict;
 use warnings;
 use utf8;
 use parent 'Exporter';
-use Carp                qw/ croak /;
-use Ref::Util           qw/ is_arrayref is_ref /;
-use String::TtyLength   qw/ tty_length /;
+use Carp                    qw/ croak /;
+use Ref::Util         0.202 qw/ is_arrayref /;
+use String::TtyLength 0.02  qw/ tty_width /;
 
 our @EXPORT_OK = qw/ generate_table /;
 
@@ -165,17 +165,17 @@ sub _format_column
     my $pad = $param->{compact} ? '' : ' ';
 
     if ($align eq 'r' || $align eq 'right') {
-        return $pad.' ' x ($width - tty_length($text)).$text.$pad;
+        return $pad.' ' x ($width - tty_width($text)).$text.$pad;
     }
     elsif ($align eq 'c' || $align eq 'center' || $align eq 'centre') {
-        my $total_spaces = $width - tty_length($text);
+        my $total_spaces = $width - tty_width($text);
         my $left_spaces  = int($total_spaces / 2);
         my $right_spaces = $left_spaces;
         $right_spaces++ if $total_spaces % 2 == 1;
         return $pad.(' ' x $left_spaces).$text.(' ' x $right_spaces).$pad;
     }
     else {
-        return $pad.$text.' ' x ($width - tty_length($text)).$pad;
+        return $pad.$text.' ' x ($width - tty_width($text)).$pad;
     }
 }
 
@@ -187,8 +187,11 @@ sub _calculate_widths
         my @columns = @$row;
         for (my $i = 0; $i < @columns; $i++) {
             next unless defined($columns[$i]);
-            $widths[$i] = tty_length($columns[$i]) if !defined($widths[$i])
-                                                   || tty_length($columns[$i]) > $widths[$i];
+
+            my $width = tty_width($columns[$i]);
+
+            $widths[$i] = $width if !defined($widths[$i])
+                                 || $width > $widths[$i];
         }
     }
     return @widths;

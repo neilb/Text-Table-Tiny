@@ -1,6 +1,10 @@
 Revision history for Perl module Text::Table::Tiny
 
-1.01 2020-09-?? NEILB
+1.01_01 2020-09-12 NEILB
+    - Switched to using the tty_width() function in String::TtyLength,
+      which should mean that the table layout works better with wide
+      Unicode characters such as kanji and emoji. Shoichi Kaji pointed
+      out that wide characters resulted in malformed tables.
     - The README was referring to the wrong module. Reported by Andy Lester.
 
 1.01 2020-09-07 NEILB

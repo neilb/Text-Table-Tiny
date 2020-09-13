@@ -214,7 +214,7 @@ Text::Table::Tiny - generate simple text tables from 2D arrays
 
 =head1 SYNOPSIS
 
- use Text::Table::Tiny 1.00 qw/ generate_table /;
+ use Text::Table::Tiny 1.02 qw/ generate_table /;
 
  my $rows = [
    [qw/ Pokemon     Type     Count /],
@@ -230,6 +230,8 @@ Text::Table::Tiny - generate simple text tables from 2D arrays
 
 This module provides a single function, C<generate_table>, which formats
 a two-dimensional array of data as a text table.
+It handles text that includes ANSI escape codes and wide Unicode characters.
+
 There are a number of options for adjusting the output format,
 but the intention is that the default option is good enough for most uses.
 
@@ -243,14 +245,17 @@ The example shown in the SYNOPSIS generates the following table:
  | Feraligatr | Water   | 5678  |
  +------------+---------+-------+
 
-B<NOTE>: the interface changed with version 0.04, so if you
-use the C<generate_table()> function illustrated above,
-then you need to require at least version 0.04 of this module,
-as shown in the SYNOPSIS.
-
-B<NOTE 2>: some of the options described below were added in version 1.00,
-so your best bet is to require version 1.00,
+Support for wide characters was added in 1.02,
+so if you need that,
+you should specify that as your minimum required version,
 as per the SYNOPSIS.
+
+The interface changed with version 0.04,
+so if you use the C<generate_table()> function illustrated above,
+then you need to require at least version 0.04 of this module.
+
+Some of the options described below were added in version 1.00,
+so your best bet is to require at least version 1.00.
 
 
 =head2 generate_table()

@@ -403,9 +403,11 @@ Tables are not part of the original Markdown specification but have been adopted
 
 The markdown style requires that header and top_and_tail be true, and indent should be none while separate_rows should be false. These requirements are all forced when style is set to 'markdown', they will be ignored if specified.
 
-Compatible options are compact and align. When align is not present the delimiter row is formatted like |---|, if alignment is set that would change to |:---|,|:---:|,|---:| depending on alignment. While the GFM spec allows for ragged (not padded to be even) columns, they are not available in Text::Table::Tiny.
+Compatible options are compact and align. When align is not present the delimiter row is formatted like |---|, if alignment is set that would change to |:---|,|:---:|,|---:| depending on alignment. 
 
 If any of the data includes the '|' character, it must be escaped as '\|'. Since this would cause invalid Markdown, the error is fatal.
+
+While the GFM spec allows for ragged (not padded to be even) columns, they are not available in Text::Table::Tiny. The spec is silent on leading space (indent), but in practice it often fails to be recognized by GitHub's Markdown display, so it is treated as not allowed. In the spec leading and trailing pipes are optional. If the indent is uneven or there is too much leading whitespace the table won't be displayed correctly. Leading and trailing pipes are treated as mandatory.
 
 Added in 1.03.
 

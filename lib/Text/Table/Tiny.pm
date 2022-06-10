@@ -22,6 +22,7 @@ our $HEADER_CORNER_MARKER = 'O';
 
 my %arguments = (
     rows => "the rows, including a possible header row, of the table",
+    header => "the header row, automatically sets header_row to true",
     header_row => "if true, indicates that the first row is a header row",
     separate_rows => "if true, a separate rule will be drawn between each row",
     top_and_tail => "if true, miss out top and bottom edges of table",
@@ -47,7 +48,14 @@ sub generate_table
 
     my $rows    = $param{rows} or croak "you must pass the 'rows' argument!";
     my @rows    = @$rows;
-    my @widths  = _calculate_widths($rows);
+
+    my $header;
+    if ($param{header}) {
+        $header = $param{header};
+        $param{header_row} = 1;
+    } elsif ($param{header_row}) {
+        $header = shift @rows;
+    }
 
     $param{style}  //= 'classic';
 
@@ -66,7 +74,7 @@ sub generate_table
         $char->{FHR} = $HEADER_ROW_SEPARATOR;
     }
 
-    my $header;
+    my @widths = _calculate_widths(@rows, $header || ());
     my @align;
     if (defined $param{align}) {
         @align = is_arrayref($param{align})
@@ -77,8 +85,6 @@ sub generate_table
     else {
         @align = ('l') x int(@widths);
     }
-
-    $header = shift @rows if $param{header_row};
 
     my $table = _top_border(\%param, \@widths, $char)
                 ._header_row(\%param, $header, \@widths, \@align, $char)
@@ -181,9 +187,8 @@ sub _format_column
 
 sub _calculate_widths
 {
-    my $rows = shift;
     my @widths;
-    foreach my $row (@$rows) {
+    foreach my $row (@_) {
         my @columns = @$row;
         for (my $i = 0; $i < @columns; $i++) {
             next unless defined($columns[$i]);

@@ -162,8 +162,9 @@ sub _text_row
 sub _format_column
 {
     my ($text, $width, $align, $param, $char) = @_;
-    $text = '' if not defined $text;
+    $text  = ''  if not defined $text;
     $align = 'l' if not defined $align;
+
     my $pad = $param->{compact} ? '' : ' ';
 
     if ($align eq 'r' || $align eq 'right') {

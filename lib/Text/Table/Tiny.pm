@@ -1,6 +1,6 @@
 package Text::Table::Tiny;
 
-use 5.010;
+use 5.008;
 use strict;
 use warnings;
 use utf8;
@@ -49,9 +49,9 @@ sub generate_table
     my @rows    = @$rows;
     my @widths  = _calculate_widths($rows);
 
-    $param{style}  //= 'classic';
+    $param{style} = 'classic' if not defined $param{style};
 
-    $param{indent} //= '';
+    $param{indent} = '' if not defined $param{indent};
     $param{indent} = ' ' x $param{indent} if $param{indent} =~ /^[0-9]+$/;
 
     my $style   = $param{style};
@@ -151,7 +151,7 @@ sub _text_row
     my $text = $param->{indent}.$char->{VR};
 
     for (my $i = 0; $i < @$widths; $i++) {
-        $text .= _format_column($columns[$i] // '', $widths->[$i], $align->[$i] // 'l', $param, $char);
+        $text .= _format_column($columns[$i], $widths->[$i], $align->[$i], $param, $char);
         $text .= $char->{VR};
     }
     $text .= "\n";
@@ -162,6 +162,8 @@ sub _text_row
 sub _format_column
 {
     my ($text, $width, $align, $param, $char) = @_;
+    $text = '' if not defined $text;
+    $align = 'l' if not defined $align;
     my $pad = $param->{compact} ? '' : ' ';
 
     if ($align eq 'r' || $align eq 'right') {

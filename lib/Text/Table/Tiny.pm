@@ -25,6 +25,8 @@ my %arguments = (
     header_row => "if true, indicates that the first row is a header row",
     separate_rows => "if true, a separate rule will be drawn between each row",
     top_and_tail => "if true, miss out top and bottom edges of table",
+    left_and_right => "if true, miss out left and right edges of table",
+    edges => "if true, miss out edges of table",
     align => "either single alignment, or an array per of alignments per col",
     style => "styling of table, one of classic, boxrule, or norule",
     indent => "indent every row of the table a certain number of spaces",
@@ -53,6 +55,8 @@ sub generate_table
 
     $param{indent} = '' if not defined $param{indent};
     $param{indent} = ' ' x $param{indent} if $param{indent} =~ /^[0-9]+$/;
+
+    $param{top_and_tail} = $param{left_and_right} = 1 if $param{edges};
 
     my $style   = $param{style};
     croak "unknown style '$style'" if not exists($charsets{ $style });
@@ -111,12 +115,19 @@ sub _rule_row
     my ($param, $widths, $le, $hr, $cross, $re) = @_;
     my $pad = $param->{compact} ? '' : $hr;
 
-    return $param->{indent}
-           .$le
-           .join($cross, map { $pad.($hr x $_).$pad } @$widths)
-           .$re
+    if ($param->{left_and_right}) {
+        return $param->{indent}
+           .join($pad . $cross . $pad, map { $hr x $_ } @$widths)
            ."\n"
            ;
+    } else {
+        return $param->{indent}
+            .$le
+            .join($cross, map { $pad.($hr x $_).$pad } @$widths)
+            .$re
+            ."\n"
+            ;
+    }
 }
 
 sub _header_row
@@ -148,15 +159,23 @@ sub _text_row
 {
     my ($param, $row, $widths, $align, $char) = @_;
     my @columns = @$row;
-    my $text = $param->{indent}.$char->{VR};
+    if ($param->{left_and_right}) {
+        my $pad = $param->{compact} ? '' : ' ';
+        return $param->{indent}
+           .join($pad . $char->{VR} . $pad, map { _format_column($columns[$_], $widths->[$_], $align->[$_], $param, $char) } 0 .. $#$widths)
+           ."\n"
+           ;
+    } else {
+        my $text = $param->{indent}.$char->{VR};
 
-    for (my $i = 0; $i < @$widths; $i++) {
-        $text .= _format_column($columns[$i], $widths->[$i], $align->[$i], $param, $char);
-        $text .= $char->{VR};
+        for (my $i = 0; $i < @$widths; $i++) {
+            $text .= _format_column($columns[$i], $widths->[$i], $align->[$i], $param, $char);
+            $text .= $char->{VR};
+        }
+        $text .= "\n";
+
+        return $text;
     }
-    $text .= "\n";
-
-    return $text;
 }
 
 sub _format_column
@@ -164,7 +183,7 @@ sub _format_column
     my ($text, $width, $align, $param, $char) = @_;
     $text = '' if not defined $text;
     $align = 'l' if not defined $align;
-    my $pad = $param->{compact} ? '' : ' ';
+    my $pad = $param->{compact} || $param->{left_and_right} ? '' : ' ';
 
     if ($align eq 'r' || $align eq 'right') {
         return $pad.' ' x ($width - tty_width($text)).$text.$pad;

@@ -29,6 +29,7 @@ my %arguments = (
     style => "styling of table, one of classic, boxrule, or norule",
     indent => "indent every row of the table a certain number of spaces",
     compact => "narrow columns (no space either side of content)",
+    header => "array ref with header columns",
 );
 
 my %charsets = (
@@ -47,7 +48,19 @@ sub generate_table
 
     my $rows    = $param{rows} or croak "you must pass the 'rows' argument!";
     my @rows    = @$rows;
-    my @widths  = _calculate_widths($rows);
+
+    if (exists($param{header}) && exists($param{header_row})) {
+        croak "you can't pass both header and header_row arguments";
+    }
+
+    if (exists $param{header}) {
+        if (not is_arrayref($param{header})) {
+            croak "the 'header' argument expects an arrayref\n"
+        }
+        unshift(@rows, $param{header});
+        $param{header_row} = 1;
+    }
+    my @widths  = _calculate_widths(\@rows);
 
     $param{style} = 'classic' if not defined $param{style};
 
@@ -290,6 +303,15 @@ header_row
 If given a true value, the first row in the data will be interpreted
 as a header row, and separated from the rest of the table with a ruled line.
 
+
+=item *
+
+header
+
+Takes an array reference which has the header row to use for the table.
+You can't use this option together with C<header_row>.
+
+Added in 1.03
 
 =item *
 

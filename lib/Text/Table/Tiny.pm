@@ -36,6 +36,12 @@ my %charsets = (
     classic => { TLC => '+', TT => '+', TRC => '+', HR => '-', VR => '|', FHR => '=', LT => '+', RT => '+', FLT => 'O', FRT => 'O', HC => '+', FHC => 'O', BLC => '+', BT => '+', BRC => '+' },
     boxrule => { TLC => '┌', TT => '┬', TRC => '┐', HR => '─', VR => '│', FHR => '═', LT => '├', RT => '┤', FLT => '╞', FRT => '╡', HC => '┼', FHC => '╪', BLC => '└', BT => '┴', BRC => '┘' },
     norule  => { TLC => ' ', TT => ' ', TRC => ' ', HR => ' ', VR => ' ', FHR => ' ', LT => ' ', RT => ' ', FLT => ' ', FRT => ' ', HC => ' ', FHC => ' ', BLC => ' ', BT => ' ', BRC => ' ' },
+    markdown => {
+      TLC => '|', TT => ' ', TRC => '|', HR => '-',
+      VR => '|', FHR => ' ', LT => '|', RT => '|',
+      FLT => ' ', FRT => ' ', HC => '|', FHC => ' ',
+      BLC => '|', BT => ' ', BRC => '|',
+    },
 );
 
 sub generate_table
@@ -77,6 +83,12 @@ sub generate_table
         $char->{VR}  = $COLUMN_SEPARATOR;
         $char->{FLT} = $char->{FRT} = $char->{FHC} = $HEADER_CORNER_MARKER;
         $char->{FHR} = $HEADER_ROW_SEPARATOR;
+    } elsif ( $style eq 'markdown') {
+      _md_validate_data( $rows );
+      $param{'header_row'} = 1;
+      $param{'top_and_tail'} = 1;
+      $param{'separate_rows'} = 0;
+      $param{'indent'} = '';
     }
 
     my $header;
@@ -95,7 +107,7 @@ sub generate_table
 
     my $table = _top_border(\%param, \@widths, $char)
                 ._header_row(\%param, $header, \@widths, \@align, $char)
-                ._header_rule(\%param, \@widths, $char)
+                ._header_rule(\%param, \@widths, $char, \@align)
                 ._body(\%param, \@rows, \@widths, \@align, $char)
                 ._bottom_border(\%param, \@widths, $char);
     chop($table);
@@ -140,9 +152,41 @@ sub _header_row
     return _text_row($param, $row, $widths, $align, $char);
 }
 
+sub _md_validate_data {
+  my $rows = shift @_;
+  for my $row ( @{$rows}) {
+    if ("@{$row}" =~ m/[^\\]\|/ ){
+      die "Unescaped | will produce invalid Markdown!\n@{$row}";
+    }
+  }
+}
+
+sub _md_header_rule {
+  my ($param, $widthref, $alignref ) = @_;
+  my $coladj = $param->{'compact'} ? -2 : 0;
+  my @align = @{$alignref};
+  my @width = @{$widthref};
+  my $rule = '|';
+  while ( @width) {
+    my $colwidth = $coladj + shift( @width);
+    my $colalign = shift( @align);
+    my $DASHES = '-' x ($colwidth ) ;
+    $rule .= ":$DASHES-|" if ( $colalign eq 'l') ;
+    $rule .= "-$DASHES:|" if ( $colalign eq 'r') ;
+    $rule .= ":$DASHES:|" if ( $colalign eq 'c') ;
+  }
+return "$rule\n" ;
+}
+
 sub _header_rule
 {
-    my ($param, $widths, $char) = @_;
+    my ($param, $widths, $char, $align) = @_;
+    if ( $param->{'style'} eq 'markdown' ) {
+      # the default unaligned markdown header_rule
+      # is similar to other styles. the aligned
+      # header_rule is unique.
+      return _md_header_rule($param, $widths, $align) if $param->{'align'};
+    }
     return '' unless $param->{header_row};
     my $fancy = $param->{separate_rows} ? 'F' : '';
 
@@ -348,7 +392,7 @@ style
 
 Specifies the format of the output table.
 The default is C<'classic'>,
-but other options are C<'boxrule'> and C<'norule'>.
+but other options are C<'boxrule'>, C<'norule'> and C<'markdown'>.
 
 If you use the C<boxrule> style,
 you'll probably need to run C<binmode(STDOUT, ':utf8')>.
@@ -378,6 +422,19 @@ Added in 1.00.
 
 =back
 
+=head3 Style markdown
+
+Tables are not part of the original Markdown specification but have been adopted by many extended Markdown flavours. The GitHub Flavored Markdown specification is followed, many other implementations are compatible with it.
+
+The markdown style requires that header and top_and_tail be true, and indent should be none while separate_rows should be false. These requirements are all forced when style is set to 'markdown', they will be ignored if specified.
+
+Compatible options are compact and align. When align is not present the delimiter row is formatted like |---|, if alignment is set that would change to |:---|,|:---:|,|---:| depending on alignment. 
+
+If any of the data includes the '|' character, it must be escaped as '\|'. Since this would cause invalid Markdown, the error is fatal.
+
+While the GFM spec allows for ragged (not padded to be even) columns, they are not available in Text::Table::Tiny. The spec is silent on leading space (indent), but in practice it often fails to be recognized by GitHub's Markdown display, so it is treated as not allowed. In the spec leading and trailing pipes are optional. If the indent is uneven or there is too much leading whitespace the table won't be displayed correctly. Leading and trailing pipes are treated as mandatory.
+
+Added in 1.03.
 
 =head2 EXAMPLES
 
@@ -475,7 +532,7 @@ Which results in the following:
 
 You can use this with the other styles,
 but I'm not sure you'd want to.
- 
+
 If you just want columnar output,
 use the C<norule> style:
 
@@ -483,13 +540,13 @@ use the C<norule> style:
 
 which results in:
 
-  
+
   Pokemon      Type      Count
-  
+
   Abra         Psychic       5
   Ekans        Poison      123
   Feraligatr   Water      5678
-   
+
 
 Note that everywhere you saw a line on the previous tables,
 there will be a space character in this version.
@@ -497,6 +554,32 @@ So you may want to combine the C<top_and_tail> option,
 to suppress the extra blank lines before and after
 the body of the table.
 
+To get a basic Markdown table:
+
+  generate_table( rows => $rows, style => 'markdown' );
+
+To get something like:
+
+  | Pokemon   | Type           | Seen  |
+  |-----------|----------------|-------|
+  | Rattata   | Normal         | 10199 |
+  | Ekans     | Poison         | 536   |
+  | Vileplume | Grass / Poison | 4     |
+
+If you want to specify alignment you can. Remember, if you need to use '|' in any of your data it must be escaped as '\|', and it will appear in the output that way. Failure to do so will result in invalid Markdown. If you change the Type for Vileplume to 'Grass\|Poison' and then:
+
+  generate_table(
+    rows => $rows,
+    style => 'markdown',
+    align => [ 'l','c','r' ] );
+
+You'll get:
+
+  | Pokemon   |     Type      |  Seen |
+  |:----------|:-------------:|------:|
+  | Rattata   |    Normal     | 10199 |
+  | Ekans     |    Poison     |   536 |
+  | Vileplume | Grass\|Poison |     4 |
 
 =head1 SEE ALSO
 
@@ -508,6 +591,9 @@ There are many modules for formatting text tables on CPAN.
 A good number of them are listed in the
 L<See Also|https://metacpan.org/pod/Text::Table::Manifold#See-Also>
 section of the documentation for L<Text::Table::Manifold>.
+
+The specification for tables in GitHub Flavored Markdown is at: L<https://github.github.com/gfm/#tables-extension->
+
 
 
 =head1 REPOSITORY
@@ -531,4 +617,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
